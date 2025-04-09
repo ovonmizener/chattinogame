@@ -22,6 +22,8 @@ obstacle_width = 50
 obstacle_speed = 5
 obstacle_gap = 200
 score = 0
+is_lunging = False
+lunge_timer = 0
 
 # Step 2: Load Assets
 background = pygame.image.load("background.png")
@@ -33,13 +35,34 @@ enemy_img = pygame.transform.scale(enemy_img, (40, 40))
 
 # Step 3: Game Objects
 character_rect = character_img.get_rect(topleft=(100, SCREEN_HEIGHT // 2))
-enemy_rect = enemy_img.get_rect(topleft=(SCREEN_WIDTH - 100, SCREEN_HEIGHT // 2))
+enemy_rect = enemy_img.get_rect(topleft=(50, SCREEN_HEIGHT // 2))  # Start enemy behind the character
 obstacles = []
 font = pygame.font.Font(None, 36)  # Default font for score
 
 # Scrolling background setup
 bg_x1 = 0
 bg_x2 = SCREEN_WIDTH
+
+def game_over_screen():
+    screen.fill(WHITE)
+    font_large = pygame.font.Font(None, 72)
+    text = font_large.render("Game Over!", True, BLACK)
+    button_text = font.render("Try Again", True, BLACK)
+    button_rect = pygame.Rect((SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2), (200, 50))
+
+    screen.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 3))
+    pygame.draw.rect(screen, GREEN, button_rect)
+    screen.blit(button_text, (button_rect.x + 25, button_rect.y + 10))
+    pygame.display.flip()
+
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN and button_rect.collidepoint(event.pos):
+                waiting = False
 
 # Step 4: Game Loop
 running = True
@@ -61,11 +84,22 @@ while running:
     if character_rect.y < 0:
         character_rect.y = 0
 
-    # Move enemy towards character
-    if enemy_rect.x < character_rect.x:
-        enemy_rect.x += 2
+    # Move enemy towards character with lunging
+    if not is_lunging and random.randint(1, 200) == 1:  # Random chance to lunge
+        is_lunging = True
+        lunge_timer = 30  # Lunge lasts for 30 frames
+    if is_lunging:
+        enemy_rect.x += 7  # Boost speed for lunge
+        lunge_timer -= 1
+        if lunge_timer <= 0:
+            is_lunging = False
     else:
-        enemy_rect.x -= 2
+        if enemy_rect.x < character_rect.x - 150:  # Maintain distance
+            enemy_rect.x += 2
+        else:
+            enemy_rect.x -= 1
+    if enemy_rect.x < 0:  # Prevent moving offscreen
+        enemy_rect.x = 0
 
     # Generate obstacles
     if len(obstacles) == 0 or obstacles[-1].x < SCREEN_WIDTH - 300:
@@ -83,16 +117,22 @@ while running:
     # Check for collision
     for obstacle in obstacles:
         if character_rect.colliderect(obstacle):
-            print("Game Over!")
-            running = False
+            game_over_screen()
+            running = True
+            score = 0  # Reset score
+            obstacles = []  # Reset obstacles
+            enemy_rect.topleft = (-50, SCREEN_HEIGHT // 2)  # Reset enemy
 
-    if character_rect.colliderect(enemy_rect):
-        print("Game Over!")
-        running = False
+    if character_rect.colliderect(enemy_rect):  # Collision with enemy
+        game_over_screen()
+        running = True
+        score = 0  # Reset score
+        obstacles = []  # Reset obstacles
+        enemy_rect.topleft = (-50, SCREEN_HEIGHT // 2)  # Reset enemy
 
     # Check if character passed an obstacle for scoring
     for obstacle in obstacles:
-        if obstacle.x + obstacle_width == character_rect.x:
+        if obstacle.x + obstacle_width == character_rect.x:  # Passes obstacle
             score += 1
 
     # Render graphics
@@ -119,4 +159,4 @@ while running:
     pygame.display.flip()
     clock.tick(FPS)
 
-pygame.quit()  
+pygame.quit()
