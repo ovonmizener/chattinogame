@@ -15,7 +15,7 @@ GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
 
 # Game parameters
-gravity = 1
+gravity = 0.5  # Reduced gravity for slower descent
 jump_power = -15
 velocity = 0
 obstacle_width = 50
@@ -76,8 +76,13 @@ while running:
     if keys[pygame.K_SPACE] and velocity > -5:  # Flappy Bird-style jump
         velocity = jump_power
 
-    # Update character position
+    # Update character position with slower descent
     velocity += gravity
+    if velocity > 5:  # Cap downward speed
+        velocity = 5
+    if velocity > 0:  # Apply air resistance when falling
+        velocity -= 0.1
+
     character_rect.y += velocity
     if character_rect.y > SCREEN_HEIGHT - character_rect.height:
         character_rect.y = SCREEN_HEIGHT - character_rect.height
