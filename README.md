@@ -3,6 +3,8 @@ Just for fun, I started making a "Flappy Bird" style game in Python. It's themed
 
 # Jetpack Escape
 
+![Jetpack Escape Screenshot](chattinogamescreenshot.png)
+
 A fast-paced, jetpack-powered arcade game inspired by Flappy Bird, but with dynamic obstacles, an enemy AI, and a unique tunnel mechanic. Developed for fun and learning, with plans for original assets in the future.
 
 ---
