@@ -3,6 +3,7 @@ import random
 
 # Step 1: Constants and Initialization
 pygame.init()
+pygame.mixer.init()
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Jetpack Escape")
@@ -41,6 +42,8 @@ state = "menu"
 background = pygame.image.load("background.png")
 character_img = pygame.image.load("jetpack_character.png")
 enemy_img = pygame.image.load("enemy.png")
+jump_sound = pygame.mixer.Sound("jump.wav")
+jump_sound.set_volume(0.3)
 background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
 character_img = pygame.transform.scale(character_img, (50, 50))
 enemy_img = pygame.transform.scale(enemy_img, (40, 40))
@@ -58,6 +61,9 @@ bg_x2 = SCREEN_WIDTH
 # Define Tunnel Area (a rectangle at the bottom of the screen)
 tunnel_rect = pygame.Rect(0, SCREEN_HEIGHT - 100, SCREEN_WIDTH, 100)
 
+game_volume = 0.3
+jump_sound.set_volume(game_volume)
+
 # Menu Screen Function
 def show_menu():
     screen.fill(WHITE)
@@ -67,20 +73,52 @@ def show_menu():
     title_text = font_large.render("Jetpack Escape", True, BLACK)
     start_text = font_small.render("Start Game", True, BLACK)
     quit_text = font_small.render("Quit", True, BLACK)
+    credits_text = font_small.render("Credits", True, BLACK)
     
-    # Define button areas for Start and Quit
+    # Define button areas for Start, Credits, and Quit
     start_button = pygame.Rect((SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 - 50), (200, 50))
-    quit_button = pygame.Rect((SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 20), (200, 50))
+    credits_button = pygame.Rect((SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 20), (200, 50))
+    quit_button = pygame.Rect((SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 90), (200, 50))
     
     pygame.draw.rect(screen, GREEN, start_button)
+    pygame.draw.rect(screen, GREEN, credits_button)
     pygame.draw.rect(screen, GREEN, quit_button)
     
     screen.blit(title_text, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 3))
     screen.blit(start_text, (start_button.x + 40, start_button.y + 10))
+    screen.blit(credits_text, (credits_button.x + 55, credits_button.y + 10))
     screen.blit(quit_text, (quit_button.x + 65, quit_button.y + 10))
     
     pygame.display.flip()
-    return start_button, quit_button
+    return start_button, credits_button, quit_button
+
+# Credits Screen Function
+def show_credits():
+    running_credits = True
+    while running_credits:
+        screen.fill(WHITE)
+        font_large = pygame.font.Font(None, 48)
+        font_small = pygame.font.Font(None, 32)
+        credits_title = font_large.render("Credits", True, BLACK)
+        credits_body = font_small.render("This game was developed by Oliver von Mizener.", True, BLACK)
+        credits_note1 = font_small.render("Assets are temporary as of 5/22/25", True, BLACK)
+        credits_note2 = font_small.render("and will be substituted at a later date.", True, BLACK)
+        back_text = font_small.render("Back", True, BLACK)
+        back_button = pygame.Rect((SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 80), (200, 50))
+        
+        screen.blit(credits_title, (SCREEN_WIDTH // 2 - 70, SCREEN_HEIGHT // 3 - 40))
+        screen.blit(credits_body, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 30))
+        screen.blit(credits_note1, (SCREEN_WIDTH // 2 - credits_note1.get_width() // 2, SCREEN_HEIGHT // 2 + 10))
+        screen.blit(credits_note2, (SCREEN_WIDTH // 2 - credits_note2.get_width() // 2, SCREEN_HEIGHT // 2 + 40))
+        pygame.draw.rect(screen, GREEN, back_button)
+        screen.blit(back_text, (back_button.x + 65, back_button.y + 10))
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN and back_button.collidepoint(event.pos):
+                running_credits = False
 
 # Game Over Screen Function
 def game_over_screen():
@@ -116,15 +154,24 @@ def game_over_screen():
 running = True
 while running:
     if state == "menu":
-        start_button, quit_button = show_menu()
+        start_button, credits_button, quit_button = show_menu()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if start_button.collidepoint(event.pos):
                     state = "playing"
+                if credits_button.collidepoint(event.pos):
+                    show_credits()
                 if quit_button.collidepoint(event.pos):
                     running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_DOWN:
+                    game_volume = max(0.0, game_volume - 0.05)
+                    jump_sound.set_volume(game_volume)
+                if event.key == pygame.K_UP:
+                    game_volume = min(1.0, game_volume + 0.05)
+                    jump_sound.set_volume(game_volume)
 
     elif state == "playing":
         for event in pygame.event.get():
@@ -135,6 +182,7 @@ while running:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] and velocity > -5:
             velocity = jump_power
+            jump_sound.play(fade_ms=100)
 
         # Update character physics: add gravity and apply a cap + air resistance
         velocity += gravity
@@ -266,6 +314,23 @@ while running:
         # Display score
         score_text = font.render(f"Score: {score}", True, BLACK)
         screen.blit(score_text, (10, 10))
+
+        # Draw volume bar (top right)
+        bar_x = SCREEN_WIDTH - 210
+        bar_y = 10
+        bar_width = 150
+        bar_height = 20
+        # Draw background bar
+        pygame.draw.rect(screen, (180, 180, 180), (bar_x, bar_y, bar_width, bar_height))
+        # Draw filled bar
+        filled_width = int(bar_width * game_volume)
+        pygame.draw.rect(screen, (0, 200, 0), (bar_x, bar_y, filled_width, bar_height))
+        # Draw border
+        pygame.draw.rect(screen, BLACK, (bar_x, bar_y, bar_width, bar_height), 2)
+        # Draw label
+        font_small = pygame.font.Font(None, 24)
+        label = font_small.render(f"Volume: {int(game_volume*100)}%", True, BLACK)
+        screen.blit(label, (bar_x + bar_width + 10, bar_y))
 
         pygame.display.flip()
         clock.tick(FPS)
