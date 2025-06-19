@@ -69,14 +69,31 @@ continuous_current_speed = continuous_obstacle_speed
 continuous_game_started = False  # New flag to track if game has started
 
 # Step 2: Load Assets
-background = pygame.image.load("background.png")
-character_img = pygame.image.load("jetpack_character.png")
-enemy_img = pygame.image.load("enemy.png")
-jump_sound = pygame.mixer.Sound("jump.wav")
-jump_sound.set_volume(0.3)
-background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
-character_img = pygame.transform.scale(character_img, (50, 50))
-enemy_img = pygame.transform.scale(enemy_img, (90, 90))
+try:
+    background = pygame.image.load("background.png")
+    character_img = pygame.image.load("jetpack_character.png")
+    enemy_img = pygame.image.load("enemy.png")
+    background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    character_img = pygame.transform.scale(character_img, (50, 50))
+    enemy_img = pygame.transform.scale(enemy_img, (90, 90))
+except Exception as e:
+    print(f"Error loading images: {e}")
+    # Create fallback colored rectangles
+    background = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    background.fill((100, 150, 255))  # Blue background
+    character_img = pygame.Surface((50, 50))
+    character_img.fill((255, 255, 0))  # Yellow character
+    enemy_img = pygame.Surface((90, 90))
+    enemy_img.fill((255, 0, 0))  # Red enemy
+
+try:
+    jump_sound = pygame.mixer.Sound("jump.wav")
+    jump_sound.set_volume(0.3)
+except Exception as e:
+    print(f"Error loading sound: {e}")
+    # Create a silent sound as fallback
+    jump_sound = pygame.mixer.Sound(pygame.sndarray.make_sound(pygame.surfarray.pixels3d(pygame.Surface((1, 1)))))
+    jump_sound.set_volume(0)
 
 # Step 3: Game Objects
 character_rect = character_img.get_rect(topleft=(100, SCREEN_HEIGHT // 2))

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jetpack Escape</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .game-container {
+            text-align: center;
+        }
+        
+        #game-canvas {
+            border: 3px solid #00FFFF;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .game-title {
+            color: #FF00FF;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.7);
+        }
+        
+        .game-description {
+            color: #00FFFF;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+        
+        .controls {
+            color: #FFFFFF;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #00FFFF;
+        }
+        
+        .controls h3 {
+            color: #FF00FF;
+            margin-top: 0;
+        }
+        
+        .controls ul {
+            text-align: left;
+            display: inline-block;
+        }
+        
+        .controls li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">Jetpack Escape</h1>
+        <p class="game-description">
+            Navigate through obstacles in this fast-paced jetpack adventure! 
+            Choose between Traditional mode with lives and enemies, or Continuous mode for endless challenge.
+        </p>
+        
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+        
+        <div class="controls">
+            <h3>Controls</h3>
+            <ul>
+                <li><strong>SPACE:</strong> Jump / Double Jump</li>
+                <li><strong>ESC:</strong> Return to Menu</li>
+                <li><strong>Mouse:</strong> Navigate Menus</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html> 

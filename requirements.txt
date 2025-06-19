@@ -1,2 +1,0 @@
-# requirements.txt for Jetpack Escape web build
-# pygbag bundles pygame, so this can be left empty unless you add other dependencies. 

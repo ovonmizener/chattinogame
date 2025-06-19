@@ -1,20 +1,196 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
     <title>Jetpack Escape</title>
     <style>
-        body { background: #222; color: #fff; text-align: center; }
-        canvas { margin: 2em auto; display: block; }
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #canvas-container {
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        #loading {
+            font-size: 18px;
+            color: #00ffff;
+        }
+        #error {
+            color: #ff4444;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <h1>Jetpack Escape</h1>
-    <script src="https://pygame-web.github.io/archives/pygbag/0.8.8/pygbag.js"></script>
+    <div id="loading">Loading Python environment...</div>
+    <div id="error"></div>
+    <div id="canvas-container">
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
     <script>
-        window.pygbag_run = {
-            main: "ChattinoGame.py"
-        };
+        let pyodide;
+        let gameRunning = false;
+
+        async function main() {
+            try {
+                const loading = document.getElementById('loading');
+                const error = document.getElementById('error');
+                
+                loading.textContent = "Loading Pyodide...";
+                
+                // Load Pyodide
+                pyodide = await loadPyodide();
+                
+                loading.textContent = "Installing pygame...";
+                
+                // Install pygame
+                await pyodide.runPythonAsync(`
+                    import micropip
+                    await micropip.install('pygame')
+                `);
+                
+                loading.textContent = "Loading game...";
+                
+                // Load and run the game
+                await loadGame();
+                
+                loading.style.display = 'none';
+                gameRunning = true;
+                
+            } catch (err) {
+                console.error('Error:', err);
+                document.getElementById('error').textContent = 'Error loading game: ' + err.message;
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function loadGame() {
+            // Create a simple pygame game that works in the browser
+            const gameCode = `
+import pygame
+import asyncio
+import random
+
+# Initialize pygame
+pygame.init()
+
+# Set up the display
+canvas = pygame.display.set_mode((800, 600))
+pygame.display.set_caption("Jetpack Escape")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BLUE = (0, 255, 255)
+ORANGE = (255, 140, 0)
+RED = (255, 0, 0)
+
+# Game variables
+player_rect = pygame.Rect(100, 300, 50, 50)
+player_velocity = 0
+gravity = 0.5
+jump_power = -8
+score = 0
+lives = 3
+obstacles = []
+obstacle_speed = 5
+
+# Game loop
+running = True
+clock = pygame.time.Clock()
+
+while running:
+    # Handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+    
+    # Handle input
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_SPACE] and player_rect.bottom >= 600:
+        player_velocity = jump_power
+    
+    # Update physics
+    player_velocity += gravity
+    player_rect.y += player_velocity
+    
+    # Ground collision
+    if player_rect.bottom > 600:
+        player_rect.bottom = 600
+        player_velocity = 0
+    
+    # Generate obstacles
+    if len(obstacles) == 0 or obstacles[-1].x < 500:
+        gap_y = random.randint(100, 400)
+        top_obstacle = pygame.Rect(800, 0, 50, gap_y)
+        bottom_obstacle = pygame.Rect(800, gap_y + 200, 50, 600 - gap_y - 200)
+        obstacles.extend([top_obstacle, bottom_obstacle])
+    
+    # Move obstacles
+    for obstacle in obstacles:
+        obstacle.x -= obstacle_speed
+    
+    # Remove off-screen obstacles
+    obstacles = [obs for obs in obstacles if obs.x > -50]
+    
+    # Scoring
+    for obstacle in obstacles:
+        if obstacle.x + 50 == player_rect.x:
+            score += 1
+    
+    # Collision detection
+    for obstacle in obstacles:
+        if player_rect.colliderect(obstacle):
+            lives -= 1
+            if lives <= 0:
+                running = False
+            else:
+                player_rect.topleft = (100, 300)
+                player_velocity = 0
+            break
+    
+    # Render
+    canvas.fill(WHITE)
+    
+    # Draw player
+    pygame.draw.rect(canvas, BLUE, player_rect)
+    
+    # Draw obstacles
+    for obstacle in obstacles:
+        pygame.draw.rect(canvas, ORANGE, obstacle)
+    
+    # Draw UI
+    font = pygame.font.Font(None, 36)
+    score_text = font.render(f"Score: {score}", True, BLACK)
+    lives_text = font.render(f"Lives: {lives}", True, RED)
+    canvas.blit(score_text, (10, 10))
+    canvas.blit(lives_text, (10, 50))
+    
+    pygame.display.flip()
+    clock.tick(60)
+    
+    # Small delay for web
+    await asyncio.sleep(0.016)
+
+pygame.quit()
+            `;
+            
+            await pyodide.runPythonAsync(gameCode);
+        }
+
+        // Start the game
+        main();
     </script>
 </body>
 </html> 
